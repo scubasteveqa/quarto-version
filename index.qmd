@@ -13,3 +13,5 @@ library(quarto)
 
 # Output the current Quarto version
 quarto_version()
+```
+
