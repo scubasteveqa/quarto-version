@@ -1,17 +1,13 @@
 ---
 title: "Quarto Version Check"
 format: html
-server: shiny
 ---
 
 ## Current Quarto Version
 
 ```{r}
-#| panel: fill
-
 library(quarto)
 
 # Output the current Quarto version
 quarto_version()
 ```
-
