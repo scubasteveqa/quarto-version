@@ -4,15 +4,31 @@ library(bslib)
 ui <- page_fluid(
   title = "Simple Quarto Integration",
   
-  # Quarto info with specific ID for easier testing
+  # Quarto info section with individually identifiable elements
   h3("Quarto Information"),
-  div(
-    id = "quarto-version-container",
-    class = "quarto-info",
-    verbatimTextOutput("quarto_version")
+  
+  # Individual elements with unique IDs for easy targeting
+  div(id = "quarto_version_section", 
+      strong("Quarto Version:"),
+      pre(id = "quarto_version", class = "shiny-text-output")
   ),
   
-  # QMD content and download card
+  div(id = "quarto_path_section",
+      strong("Quarto Path:"),
+      pre(id = "quarto_path", class = "shiny-text-output")
+  ),
+  
+  div(id = "system_check_section",
+      strong("Direct System Check:"),
+      pre(id = "system_check", class = "shiny-text-output")
+  ),
+  
+  div(id = "r_version_section",
+      strong("R Version:"),
+      pre(id = "r_version", class = "shiny-text-output")
+  ),
+  
+  # QMD content card stays the same
   card(
     card_header("Quarto Document"),
     card_body(
@@ -25,77 +41,49 @@ ui <- page_fluid(
 )
 
 server <- function(input, output, session) {
-  # Display Quarto version information
-  output$quarto_version <- renderPrint({
-    # Check if quarto package is available
+  # Individual outputs for each piece of information
+  output$quarto_version <- renderText({
     has_quarto <- requireNamespace("quarto", quietly = TRUE)
-    
     if (has_quarto) {
-      # Try to get quarto version - with better error handling
       tryCatch({
-        # Handle the case when quarto_version returns a list
         version <- quarto::quarto_version()
-        if (is.list(version)) {
-          cat("Quarto version information is a list - converting to string\n")
-          version_str <- as.character(version)
-          cat("Quarto version: ", paste(version_str, collapse = ", "), "\n")
-        } else {
-          cat("Quarto version: ", version, "\n")
-        }
-        
-        # Same for path
-        path <- quarto::quarto_path()
-        if (is.list(path)) {
-          path_str <- as.character(path)
-          cat("Quarto path: ", paste(path_str, collapse = ", "), "\n")
-        } else {
-          cat("Quarto path: ", path, "\n")
-        }
-        
-        # Try direct system call as fallback
-        cat("\nDirect system check:\n")
-        if (.Platform$OS.type == "windows") {
-          system("where quarto 2>NUL", intern = TRUE)
-        } else {
-          system("which quarto 2>/dev/null", intern = TRUE)
-        }
-      }, error = function(e) {
-        cat("Error getting Quarto information: ", e$message, "\n")
-        
-        # Try direct system call as fallback
-        cat("\nAttempting direct system check:\n")
-        tryCatch({
-          if (.Platform$OS.type == "windows") {
-            result <- system("where quarto 2>NUL", intern = TRUE)
-            cat("System found quarto at: ", paste(result, collapse = "\n"), "\n")
-          } else {
-            result <- system("which quarto 2>/dev/null", intern = TRUE)
-            cat("System found quarto at: ", paste(result, collapse = "\n"), "\n")
-          }
-        }, error = function(e2) {
-          cat("System check also failed: ", e2$message, "\n")
-        })
-      })
+        if (is.list(version)) version <- paste(as.character(version), collapse = ", ")
+        return(version)
+      }, error = function(e) { return(paste("Error:", e$message)) })
     } else {
-      cat("Quarto package is not installed.\n")
-      cat("To install, run: install.packages('quarto')\n")
+      return("Quarto package not installed")
     }
-    
-    # Additional system information for context
-    cat("\nSystem information:\n")
-    cat("R version: ", R.version.string, "\n")
-    cat("Platform: ", .Platform$OS.type, "\n")
-    cat("PATH: ", Sys.getenv("PATH"), "\n")
   })
   
-  # Handle download of qmd file
-  output$download_qmd <- downloadHandler(
-    filename = function() {
-      "document.qmd"
-    },
-    content = function(file) {
-      writeLines(input$qmd_content, file)
+  output$quarto_path <- renderText({
+    has_quarto <- requireNamespace("quarto", quietly = TRUE)
+    if (has_quarto) {
+      tryCatch({
+        path <- quarto::quarto_path()
+        if (is.list(path)) path <- paste(as.character(path), collapse = ", ")
+        return(path)
+      }, error = function(e) { return(paste("Error:", e$message)) })
+    } else {
+      return("Not available")
     }
+  })
+  
+  output$system_check <- renderText({
+    cmd <- if (.Platform$OS.type == "windows") "where quarto 2>NUL" else "which quarto 2>/dev/null"
+    tryCatch({
+      result <- system(cmd, intern = TRUE)
+      return(paste(result, collapse = "\n"))
+    }, error = function(e) { return(paste("System check failed:", e$message)) })
+  })
+  
+  output$r_version <- renderText({
+    return(R.version.string)
+  })
+  
+  # Download handler stays the same
+  output$download_qmd <- downloadHandler(
+    filename = function() { "document.qmd" },
+    content = function(file) { writeLines(input$qmd_content, file) }
   )
 }
 
