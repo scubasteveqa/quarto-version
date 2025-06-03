@@ -1,7 +1,6 @@
 library(shiny)
 library(bslib)
 
-
 ui <- page_fluid(
   title = "Simple Quarto Integration",
   
@@ -33,9 +32,15 @@ ui <- page_fluid(
     )
   ),
   
-  # Original card content
+  # QMD content and download card
   card(
-    // ...existing code...
+    card_header("Quarto Document"),
+    card_body(
+      textAreaInput("qmd_content", "QMD Content:", 
+                  value = "## Hello Quarto\n\nThis is **bold** and *italic* text.\n\n```{r}\n# Simple R code example\nplot(1:10, main=\"Demo Plot\")\n```\n\nYou can also include equations: $E = mc^2$",
+                  height = "200px", width = "100%"),
+      downloadButton("download_qmd", "Download .qmd", class = "btn-primary")
+    )
   )
 )
 
@@ -113,9 +118,10 @@ server <- function(input, output, session) {
     return(R.version.string)
   })
   
-  # Download handler stays the same
+  # Download handler
   output$download_qmd <- downloadHandler(
-    // ...existing code...
+    filename = function() { "document.qmd" },
+    content = function(file) { writeLines(input$qmd_content, file) }
   )
 }
 
