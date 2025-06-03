@@ -4,9 +4,13 @@ library(bslib)
 ui <- page_fluid(
   title = "Simple Quarto Integration",
   
-  # Quarto info without card wrapping
+  # Quarto info with specific ID for easier testing
   h3("Quarto Information"),
-  verbatimTextOutput("quarto_version"),
+  div(
+    id = "quarto-version-container",
+    class = "quarto-info",
+    verbatimTextOutput("quarto_version")
+  ),
   
   # QMD content and download card
   card(
